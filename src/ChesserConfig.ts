@@ -41,23 +41,3 @@ export const PIECE_STYLES = [
   "tatiana",
 ];
 export const BOARD_STYLES = ["blue", "brown", "green", "ic", "purple"];
-
-export function parse_user_config(
-  settings: ChesserSettings,
-  content: string
-): ChesserConfig {
-  let userConfig: ChesserConfig = {
-    ...settings,
-    fen: "",
-  };
-
-  try {
-    return {
-      ...userConfig,
-      ...parseYaml(content),
-    };
-  } catch (e) {
-    // failed to parse
-    return userConfig;
-  }
-}

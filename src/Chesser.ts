@@ -14,7 +14,7 @@ import { Api } from "chessground/api";
 import { Color, Key } from "chessground/types";
 import { DrawShape } from "chessground/draw";
 
-import { ChesserConfig, parse_user_config } from "./ChesserConfig";
+import { ChesserConfig } from "./ChesserConfig";
 import { ChesserSettings } from "./ChesserSettings";
 import ChesserMenu from "./menu";
 
@@ -65,8 +65,18 @@ export function draw_chessboard(app: App, settings: ChesserSettings) {
     el: HTMLElement,
     ctx: MarkdownPostProcessorContext
   ) => {
-    let user_config = parse_user_config(settings, source);
-    ctx.addChild(new Chesser(el, ctx, user_config, app));
+    let default_config: ChesserConfig = {
+      ...settings,
+      fen: "",
+    };
+
+    let user_config = default_config;
+    try {
+      user_config = parseYaml(source);
+    } catch (e) {
+      // failed to parse
+    }
+    ctx.addChild(new Chesser(el, ctx, default_config, user_config, app));
   };
 }
 
@@ -77,6 +87,7 @@ export class Chesser extends MarkdownRenderChild {
   private cg: Api;
   private chess: ChessInstance;
   private config: ChesserConfig;
+  private user_config: ChesserConfig;
 
   private menu: ChesserMenu;
   private moves: Move[];
@@ -86,6 +97,7 @@ export class Chesser extends MarkdownRenderChild {
   constructor(
     containerEl: HTMLElement,
     ctx: MarkdownPostProcessorContext,
+    default_config: ChesserConfig,
     user_config: ChesserConfig,
     app: App
   ) {
@@ -94,7 +106,11 @@ export class Chesser extends MarkdownRenderChild {
     this.app = app;
     this.ctx = ctx;
     this.chess = new Chess();
-    this.config = user_config;
+    this.user_config = user_config;
+    this.config = {
+      ...default_config,
+      ...user_config
+    };
 
     this.sync_board_with_gamestate = this.sync_board_with_gamestate.bind(this);
     this.save_move = this.save_move.bind(this);
@@ -181,7 +197,7 @@ export class Chesser extends MarkdownRenderChild {
     }
     try {
       const updated = stringifyYaml({
-        ...this.config,
+        ...this.user_config,
         ...config,
       });
 
